@@ -422,7 +422,7 @@ def stack():
                     cx += w + 10
                 cy += CH + 10
         y += h + GAP
-    s.save("stack.svg")
+    s.save("stack-grid.svg")
 
 
 # =============================================================================
@@ -465,7 +465,7 @@ def certs():
         for k, ln in enumerate(lines):
             s.text(tx, base + k * 20, ln, "plex", 600, 15.5, ICE)
         s.text(tx, base + len(lines) * 20 + 4, org, "plex", 400, 13.5, MIST)
-    s.save("certs.svg")
+    s.save("cert-badges.svg")
 
 
 banner()

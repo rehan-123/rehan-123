@@ -13,7 +13,7 @@
   <img src="https://skillicons.dev/icons?i=windows,powershell,azure,aws,linux,py,fastapi,react,ts,vite,docker,git,github,vscode&perline=14" alt="Windows, PowerShell, Azure, AWS, Linux, Python, FastAPI, React, TypeScript, Vite, Docker, Git, GitHub, VS Code">
 </p>
 
-<img src="assets/stack.svg" width="100%" alt="Infrastructure stack: identity and access, Microsoft 365, virtualization, backup and DR, MSP and endpoint tooling, network and security">
+<img src="assets/stack-grid.svg" width="100%" alt="Infrastructure stack: identity and access, Microsoft 365, virtualization, backup and DR, MSP and endpoint tooling, network and security">
 
 ## 🚀 Projects
 
@@ -38,7 +38,7 @@ Internal tools I've written for day-to-day operations. The code isn't public.
 
 ## 🏅 Certifications
 
-<img src="assets/certs.svg" width="100%" alt="Certifications: AZ-800, AZ-801, MD-102, VMCE, ConnectWise Automate Certified Professional, Jamf Certified Associate">
+<img src="assets/cert-badges.svg" width="100%" alt="Certifications: AZ-800, AZ-801, MD-102, VMCE, ConnectWise Automate Certified Professional, Jamf Certified Associate">
 
 ## 📫 Get in touch
 
