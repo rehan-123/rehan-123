@@ -1,11 +1,11 @@
-"""Generates the PowerShell-session SVGs for the GitHub profile README.
+"""Builds the SVG visuals for the GitHub profile README.
 
-Every pane is one slice of the same console. Only the hero animates.
-Run: python3 build.py <path-to-cascadia-woff2-dir>
+Usage: python3 build.py <fonts-dir>
+<fonts-dir> holds fontsource woff2 files for IBM Plex Sans and Cascadia Code.
+Edit the data blocks below and re-run to update numbers or projects.
 """
 
 import base64
-import hashlib
 import io
 import sys
 from pathlib import Path
@@ -13,468 +13,465 @@ from pathlib import Path
 from fontTools import subset
 from fontTools.ttLib import TTFont
 
-FONT_DIR = Path(sys.argv[1])
+FONTS = Path(sys.argv[1])
 OUT = Path(__file__).parent / "assets"
 OUT.mkdir(exist_ok=True)
 
-# ---- tokens -------------------------------------------------------------
-W = 880
-FS = 14
-CW = 1200 / 2048 * FS  # Cascadia Code advance width at 14px
-LH = 22
-PADX = 24
-BASE = 16  # baseline offset inside a line box
-
-C = {
-    "bg": "#012456",      # Windows PowerShell 5.1 console blue
-    "fg": "#EEEDF0",      # its default foreground
-    "cmd": "#F9F1A5",     # PSReadLine: command
-    "par": "#9DABC2",     # PSReadLine: parameter / operator
-    "str": "#61D6D6",     # PSReadLine: string
-    "var": "#3FD07A",     # PSReadLine: variable
-    "com": "#7FB38A",     # PSReadLine: comment
-    "acc": "#3FD07A",     # PS7 FormatAccent / TableHeader (bold green)
-    "ok": "#3FD07A",
-    "pbg": "#00707A",     # Write-Progress background (DarkCyan)
-    "pfg": "#F9F1A5",     # Write-Progress foreground (Yellow)
-    "chrome": "#0A1A36",
-    "chromefg": "#C3CDDF",
-    "edge": "#2A4A80",
+FILES = {
+    ("plex", 400): "ibm-plex-sans-latin-400-normal.woff2",
+    ("plex", 500): "ibm-plex-sans-latin-500-normal.woff2",
+    ("plex", 600): "ibm-plex-sans-latin-600-normal.woff2",
+    ("plex", 700): "ibm-plex-sans-latin-700-normal.woff2",
+    ("mono", 400): "cascadia-code-latin-400-normal.woff2",
+    ("mono", 700): "cascadia-code-latin-700-normal.woff2",
 }
-MAXC = int((W - 2 * PADX) / CW)
+_fonts = {k: TTFont(FONTS / v) for k, v in FILES.items()}
+
+# ---- palette ---------------------------------------------------------------
+NIGHT = "#0B1730"
+NIGHT2 = "#0F2245"
+PANEL = "#0B1A35"
+LINE = "#23406F"
+ICE = "#EAF1FB"
+SOFT = "#CFDBEE"
+MIST = "#A9BBD8"
+CYAN = "#38C8F0"
+GREEN = "#3FD07A"
+AMBER = "#F5C451"
+CHIP = "#13284D"
+CHIPLINE = "#2A4C80"
+
+ICONS = {
+    "shield": '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+    "cloud": '<path d="M7 18h10a4 4 0 0 0 .6-7.96A6 6 0 0 0 6.2 9.2 4.5 4.5 0 0 0 7 18z"/>',
+    "server": '<rect x="4" y="4" width="16" height="6" rx="1.5"/><rect x="4" y="14" width="16" height="6" rx="1.5"/><path d="M8 7h.01M8 17h.01M12 7h4M12 17h4"/>',
+    "database": '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>',
+    "wrench": '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3.5 17.5l3 3 5.8-5.8a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/>',
+    "network": '<circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="19" r="2.5"/><circle cx="19" cy="19" r="2.5"/><path d="M10.7 7.2l-4.4 9.6M13.3 7.2l4.4 9.6M7.5 19h9"/>',
+    "candles": '<path d="M6 3.5v4M6 15v5.5M12 2.5v3M12 13v4.5M18 6v4.5M18 17v3.5"/><rect x="4.3" y="7.5" width="3.4" height="7.5" rx="0.6"/><rect x="10.3" y="5.5" width="3.4" height="7.5" rx="0.6"/><rect x="16.3" y="10.5" width="3.4" height="6.5" rx="0.6"/>',
+    "cube": '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+    "bolt": '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M13 7.5l-3.5 5h3l-1 4 3.5-5h-3z"/>',
+    "compass": '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+    "pin": '<path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>',
+    "check": '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+}
 
 
 def esc(s):
     return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def font_face(text_regular, text_bold):
-    css = []
-    for weight, text in ((400, text_regular), (700, text_bold)):
-        if not text:
-            continue
-        src = FONT_DIR / f"cascadia-code-latin-{weight}-normal.woff2"
-        f = TTFont(src)
-        opts = subset.Options()
-        opts.flavor = "woff2"
-        opts.layout_features = []
-        opts.hinting = False
-        sub = subset.Subsetter(opts)
-        sub.populate(text="".join(sorted(set(text + " "))))
-        sub.subset(f)
-        buf = io.BytesIO()
-        f.flavor = "woff2"
-        f.save(buf)
-        b64 = base64.b64encode(buf.getvalue()).decode()
-        css.append(
-            f"@font-face{{font-family:'CascadiaSub';font-weight:{weight};"
-            f"src:url(data:font/woff2;base64,{b64}) format('woff2');}}"
+def measure(text, fam="plex", w=400, size=16):
+    f = _fonts[(fam, w)]
+    cmap, hmtx, upm = f.getBestCmap(), f["hmtx"], f["head"].unitsPerEm
+    total = 0
+    for ch in text:
+        g = cmap.get(ord(ch))
+        total += hmtx[g][0] if g else upm * 0.5
+    return total / upm * size
+
+
+def wrap(text, width, fam="plex", w=400, size=16):
+    lines, cur = [], ""
+    for word in text.split():
+        trial = (cur + " " + word).strip()
+        if measure(trial, fam, w, size) <= width:
+            cur = trial
+        else:
+            lines.append(cur)
+            cur = word
+    lines.append(cur)
+    return lines
+
+
+class Svg:
+    def __init__(self, w, h, title):
+        self.w, self.h, self.title = w, h, title
+        self.body, self.css, self.defs = [], [], []
+        self.used = {}
+
+    def text(self, x, y, s, fam="plex", w=400, size=16, fill=ICE, anchor="start", extra="", cls=""):
+        self.used.setdefault((fam, w), set()).update(s)
+        family = ("P" if fam == "plex" else "M") + (f" {cls}" if cls else "")
+        a = f' text-anchor="{anchor}"' if anchor != "start" else ""
+        self.body.append(
+            f'<text x="{x:.1f}" y="{y:.1f}" class="{family}" font-weight="{w}" '
+            f'font-size="{size}" fill="{fill}"{a} {extra}>{esc(s)}</text>'
         )
-    return "".join(css)
 
-
-class Pane:
-    """A slice of console. lines: list of segment lists [(text, colorkey, bold)]."""
-
-    def __init__(self, chrome=False, title=""):
-        self.chrome = chrome
-        self.title = title
-        self.lines = []      # (segments, attrs)
-        self.blocks = []     # (line_index, n_lines, fill, attrs) background blocks
-        self.extra = []      # raw svg drawn above text (covers, cursors)
-        self.css = []
-
-    def add(self, *segs, cls=None):
-        norm = []
-        for s in segs:
-            if isinstance(s, str):
-                norm.append((s, "fg", False))
-            elif len(s) == 2:
-                norm.append((s[0], s[1], False))
-            else:
-                norm.append(s)
-        width = sum(len(t) for t, _, _ in norm)
-        assert width <= MAXC, f"line too wide ({width}>{MAXC}): {''.join(t for t,_,_ in norm)}"
-        self.lines.append((norm, cls))
-        return len(self.lines) - 1
-
-    def blank(self, cls=None):
-        return self.add("", cls=cls)
-
-    @property
-    def top(self):
-        return (38 if self.chrome else 0) + 18
-
-    def y(self, i):
-        return self.top + i * LH
-
-    def x(self, col):
-        return PADX + col * CW
-
-    def height(self):
-        return self.top + len(self.lines) * LH + 14
-
-    def render(self, path, alt):
-        H = round(self.height())
-        reg = "".join(t for segs, _ in self.lines for t, _, b in segs if not b)
-        bold = "".join(t for segs, _ in self.lines for t, _, b in segs if b)
-        out = [
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
-            f'viewBox="0 0 {W} {H}" role="img" aria-label="{esc(alt)}">',
-            f"<title>{esc(alt)}</title>",
-            "<style>",
-            font_face(reg + self.title, bold),
-            "text{font-family:'CascadiaSub','Cascadia Code','Cascadia Mono',Consolas,"
-            "'SFMono-Regular',Menlo,monospace;font-size:14px;white-space:pre;}",
-            ".t{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;font-size:12.5px;}",
-            "@keyframes show{from{opacity:0}to{opacity:1}}",
-            "@keyframes blink{0%{opacity:1}50%{opacity:0}}",
-            *self.css,
-            "@media (prefers-reduced-motion:reduce){*{animation:none!important}}",
-            "</style>",
-            "<defs><clipPath id='console'>"
-            f"<rect x='1' y='{38 if self.chrome else 1}' width='{W-2}' "
-            f"height='{H-(38 if self.chrome else 1)-1}' rx='9'/></clipPath></defs>",
-            f'<rect x="0.5" y="0.5" width="{W-1}" height="{H-1}" rx="10" '
-            f'fill="{C["bg"]}" stroke="{C["edge"]}"/>',
-        ]
-        if self.chrome:
-            out += [
-                f'<path d="M0.5 38V10.5a10 10 0 0 1 10-10h{W-21}a10 10 0 0 1 10 10V38z" '
-                f'fill="{C["chrome"]}"/>',
-                f'<line x1="0.5" y1="38" x2="{W-0.5}" y2="38" stroke="{C["edge"]}"/>',
-                f'<text class="t" x="18" y="24" fill="{C["chromefg"]}">{esc(self.title)}</text>',
-                # Windows caption buttons: minimise, maximise, close
-                f'<g stroke="{C["chromefg"]}" stroke-width="1" fill="none">'
-                f'<line x1="{W-133}" y1="19.5" x2="{W-123}" y2="19.5"/>'
-                f'<rect x="{W-87.5}" y="14.5" width="10" height="10"/>'
-                f'<line x1="{W-42}" y1="14" x2="{W-31}" y2="25"/>'
-                f'<line x1="{W-31}" y1="14" x2="{W-42}" y2="25"/></g>',
-            ]
-        for i, n, fill, attrs in self.blocks:
-            out.append(
-                f'<rect x="{PADX-10}" y="{self.y(i)}" width="{W-2*PADX+20}" '
-                f'height="{n*LH}" fill="{C[fill]}" {attrs}/>'
-            )
-        for i, (segs, cls) in enumerate(self.lines):
-            if not segs or all(t == "" for t, _, _ in segs):
-                continue
-            n = sum(len(t) for t, _, _ in segs)
-            tl = n * CW
-            spans = "".join(
-                f'<tspan fill="{C[c]}"{" font-weight=\"700\"" if b else ""}>{esc(t)}</tspan>'
-                for t, c, b in segs
-            )
-            ca = f' class="{cls}"' if cls else ""
-            out.append(
-                f'<text x="{PADX}" y="{self.y(i)+BASE}" textLength="{tl:.2f}" '
-                f'lengthAdjust="spacing" xml:space="preserve"{ca}>{spans}</text>'
-            )
-        out.append('<g clip-path="url(#console)">')
-        out += self.extra
-        out.append("</g></svg>")
-        path.write_text("\n".join(out))
-        return path
-
-
-def thumb(s):
-    return hashlib.sha1(s.encode()).hexdigest().upper()
-
-
-PROMPT = ("PS C:\\> ", "fg")
-
-
-def cmd_segments(parts):
-    """parts: list of (text, kind) where kind in cmd/par/str/var/fg."""
-    return [(t, k) for t, k in parts]
-
-
-# =========================================================================
-# 1. HERO — animated
-# =========================================================================
-hero = Pane(chrome=True, title="Administrator: Windows PowerShell")
-cmd1 = [
-    ("Get-ADUser", "cmd"), (" rehan.khan ", "fg"), ("-Properties", "par"), (" * ", "fg"),
-    ("|", "par"), (" ", "fg"), ("fl", "cmd"), (" Name", "fg"), (",", "par"), ("Title", "fg"),
-    (",", "par"), ("Company", "fg"), (",", "par"), ("Office", "fg"), (",", "par"),
-    ("Info", "fg"), (",", "par"), ("MemberOf", "fg"),
-]
-cmd2 = [("Invoke-FastPatch", "cmd"), (" -Fleet", "par"), (" Production", "fg")]
-
-L = {}
-L["c1"] = hero.add(PROMPT, *cmd1)
-hero.blank()
-
-
-def fl(label, value, width=8, cls=None, cont=False):
-    if cont:
-        return hero.add(" " * (width + 3) + value, cls=cls)
-    return hero.add((label.ljust(width), "acc", True), (" : ", "fg"), (value, "fg"), cls=cls)
-
-
-out_rows = [
-    ("Name", "Rehan Khan", False),
-    ("Title", "Advanced System Administrator", False),
-    ("Company", "IT By Design", False),
-    ("Office", "New Delhi, India", False),
-    ("Info", "~6 years in MSP and enterprise IT. I own L2/L3 escalations for US-based", False),
-    ("", "clients and mentor the engineers coming up behind me.", True),
-    ("MemberOf", "{Windows Server, AD / Entra ID, Microsoft 365, Virtualization,", False),
-    ("", "Backup & DR, Automation}", True),
-]
-out_idx = []
-for k, (lab, val, cont) in enumerate(out_rows):
-    cls = f"o{k}"
-    if lab == "Name":
-        out_idx.append(
-            hero.add(("Name".ljust(8), "acc", True), (" : ", "fg"), ("Rehan Khan", "fg", True), cls=cls)
+    def icon(self, name, x, y, size=24, stroke="#fff", sw=1.8):
+        k = size / 24
+        self.body.append(
+            f'<g transform="translate({x:.1f} {y:.1f}) scale({k:.3f})" fill="none" stroke="{stroke}" '
+            f'stroke-width="{sw}" stroke-linecap="round" stroke-linejoin="round">{ICONS[name]}</g>'
         )
-    else:
-        out_idx.append(fl(lab, val, cls=cls, cont=cont))
-hero.blank()
-L["c2"] = hero.add(PROMPT, *cmd2, cls="p2")
-hero.blank()
-BAR_N = 80
-L["pg"] = hero.add((" Invoke-FastPatch", "pfg"), cls="pg")
-hero.add(("    Patching production endpoints through Kaseya VSA", "pfg"), cls="pg")
-L["bar"] = hero.add(("    [" + "o" * BAR_N + "]", "pfg"), cls="pg")
-hero.blank()
-hero.blocks.append((L["pg"], 4, "pbg", 'class="pg"'))
-hero.blank()
-res = [("Endpoints", "600+"), ("Success", "99%"), ("Next", "macOS support")]
-res_idx = []
-for k, (lab, val) in enumerate(res):
-    res_idx.append(hero.add((lab.ljust(9), "acc", True), (" : ", "fg"), (val, "fg"), cls=f"r{k}"))
-hero.blank()
-L["end"] = hero.add(PROMPT, cls="pend")
 
-# ---- timeline ----
-css = hero.css
-plen = len(PROMPT[0])
-n1 = sum(len(t) for t, _ in cmd1)
-n2 = sum(len(t) for t, _ in cmd2)
-T1, D1 = 0.5, n1 * 0.018
-T_out = T1 + D1 + 0.3
-T_p2 = T_out + len(out_rows) * 0.06 + 0.3
-T2, D2 = T_p2 + 0.35, n2 * 0.028
-T_pg = T2 + D2 + 0.25
-T_bar, D_bar = T_pg + 0.15, 2.2
-T_res = T_bar + D_bar + 0.2
-T_end = T_res + len(res) * 0.1 + 0.2
+    def raw(self, s):
+        self.body.append(s)
 
+    def fontcss(self):
+        out = []
+        for (fam, w), chars in sorted(self.used.items()):
+            f = TTFont(FONTS / FILES[(fam, w)])
+            o = subset.Options()
+            o.flavor = "woff2"
+            o.layout_features = ["kern"]
+            o.hinting = False
+            sub = subset.Subsetter(o)
+            sub.populate(text="".join(sorted(chars | {" "})))
+            sub.subset(f)
+            buf = io.BytesIO()
+            f.flavor = "woff2"
+            f.save(buf)
+            b64 = base64.b64encode(buf.getvalue()).decode()
+            name = "PlexSub" if fam == "plex" else "CascadiaSub"
+            out.append(
+                f"@font-face{{font-family:'{name}';font-weight:{w};"
+                f"src:url(data:font/woff2;base64,{b64}) format('woff2');}}"
+            )
+        return "".join(out)
 
-def show(cls, t):
-    css.append(f".{cls}{{animation:show .01s {t:.2f}s both}}")
-
-
-for k in range(len(out_rows)):
-    show(f"o{k}", T_out + k * 0.06)
-show("p2", T_p2)
-show("pg", T_pg)
-for k in range(len(res)):
-    show(f"r{k}", T_res + k * 0.1)
-show("pend", T_end)
+    def save(self, name):
+        css = (
+            self.fontcss()
+            + ".P{font-family:'PlexSub','IBM Plex Sans','Segoe UI',system-ui,-apple-system,sans-serif}"
+            + ".M{font-family:'CascadiaSub','Cascadia Code',Consolas,'SFMono-Regular',Menlo,monospace;"
+            "white-space:pre}"
+            + "".join(self.css)
+        )
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{self.w}" height="{self.h}" '
+            f'viewBox="0 0 {self.w} {self.h}" role="img" aria-label="{esc(self.title)}">'
+            f"<title>{esc(self.title)}</title><style>{css}</style>"
+            f"<defs>{''.join(self.defs)}</defs>{''.join(self.body)}</svg>"
+        )
+        (OUT / name).write_text(svg)
+        return OUT / name
 
 
-def typing(name, line, n, t0, dur, fill="bg", col0=plen, cursor=True, cursor_from=None, gcls=""):
-    x0 = hero.x(col0)
-    y0 = hero.y(line)
-    w = n * CW
+def card_bg(s, x, y, w, h, r=16, gid="cardg"):
+    if not any(gid in d for d in s.defs):
+        s.defs.append(
+            f'<linearGradient id="{gid}" x1="0" y1="0" x2="1" y2="1">'
+            f'<stop offset="0" stop-color="{NIGHT2}"/><stop offset="1" stop-color="{NIGHT}"/></linearGradient>'
+        )
+    s.raw(
+        f'<rect x="{x+0.5}" y="{y+0.5}" width="{w-1}" height="{h-1}" rx="{r}" '
+        f'fill="url(#{gid})" stroke="{LINE}"/>'
+    )
+
+
+# =============================================================================
+# 1. BANNER
+# =============================================================================
+def banner():
+    W, H = 1000, 300
+    s = Svg(W, H, "Rehan Khan, Advanced System Administrator at IT By Design, New Delhi, India.")
+    s.defs.append(
+        f'<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A1630"/>'
+        f'<stop offset="1" stop-color="#0F2650"/></linearGradient>'
+        f'<radialGradient id="glow" cx="0.18" cy="0.2" r="0.6"><stop offset="0" stop-color="{CYAN}" '
+        f'stop-opacity="0.22"/><stop offset="1" stop-color="{CYAN}" stop-opacity="0"/></radialGradient>'
+        f'<pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">'
+        f'<path d="M28 0H0V28" fill="none" stroke="#FFFFFF" stroke-opacity="0.05"/></pattern>'
+        f'<clipPath id="frame"><rect width="{W}" height="{H}" rx="18"/></clipPath>'
+    )
+    s.raw('<g clip-path="url(#frame)">')
+    s.raw(f'<rect width="{W}" height="{H}" fill="url(#bg)"/>')
+    s.raw(f'<rect width="{W}" height="{H}" fill="url(#grid)"/>')
+    s.raw(f'<rect width="{W}" height="{H}" fill="url(#glow)"/>')
+    s.raw("</g>")
+    s.raw(f'<rect x="0.5" y="0.5" width="{W-1}" height="{H-1}" rx="18" fill="none" stroke="{LINE}"/>')
+
+    X = 48
+    s.text(X, 74, "PS C:\\>", "mono", 400, 15, AMBER)
+    s.text(X + measure("PS C:\\> ", "mono", 400, 15), 74, "whoami", "mono", 400, 15, MIST)
+    s.text(X - 2, 134, "Rehan Khan", "plex", 700, 56, ICE)
+    s.text(X, 172, "Advanced System Administrator", "plex", 500, 22, SOFT)
+    s.text(X + measure("Advanced System Administrator", "plex", 500, 22) + 10, 172,
+           "@ IT By Design", "plex", 400, 22, MIST)
+
+    # --- rotating typing strip ---
+    sx, sy, sw, sh = X, 196, 500, 44
+    s.raw(f'<rect x="{sx}" y="{sy}" width="{sw}" height="{sh}" rx="10" fill="#081227" stroke="{LINE}"/>')
+    FS = 16
+    cw = 1200 / 2048 * FS
+    s.text(sx + 18, sy + 28, ">", "mono", 700, FS, GREEN)
+    tx = sx + 18 + 2 * cw
+    lines = [
+        "automating Windows infra with PowerShell",
+        "AD · Entra ID · Microsoft 365 · Backup & DR",
+        "L2/L3 escalations for US-based clients",
+        "building AI-assisted NOC tooling",
+    ]
+    cycle, slot = 16.0, 25.0
+    css = s.css
     css.append(
-        f"@keyframes {name}{{from{{opacity:1;transform:translateX(0)}}"
-        f"to{{opacity:1;transform:translateX({w:.2f}px)}}}}"
-        f".{name}{{opacity:0;animation:{name} {dur:.2f}s steps({n}) {t0:.2f}s both}}"
+        "@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}"
+        "@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}"
+        "@keyframes ring{0%{r:4;opacity:.7}100%{r:11;opacity:0}}"
+        ".cov,.cur{opacity:0}"
+        "@media (prefers-reduced-motion:reduce){.tl1,.tl2,.tl3{display:none}"
+        f".cur0{{opacity:1;transform:translateX({len(lines[0])*cw:.2f}px)}}}}"
     )
-    hero.extra.append(
-        f'<clipPath id="k{name}"><rect x="{x0:.2f}" y="{y0}" width="{w:.2f}" height="{LH}"/></clipPath>'
-        f'<g clip-path="url(#k{name})" class="{gcls}"><rect class="{name}" x="{x0:.2f}" y="{y0}" '
-        f'width="{w:.2f}" height="{LH}" fill="{C[fill]}"/></g>'
+    s.defs.append(
+        f'<clipPath id="typearea"><rect x="{tx-1:.1f}" y="{sy+4}" width="{sx+sw-tx-10:.1f}" height="{sh-8}"/></clipPath>'
     )
-    if cursor:
-        cf = t0 if cursor_from is None else cursor_from
+    for k, line in enumerate(lines):
+        s.text(tx, sy + 28, line, "mono", 400, FS, ICE, cls=f"tl{k}")
+        n = len(line)
+        w = n * cw
+        a = k * slot
+        t_end = a + 8.0
+        hold = a + 20.0
+        e_end = a + 23.0
+        kf = (
+            f"@keyframes c{k}{{0%{{transform:translateX(0)}}"
+            f"{a:.2f}%{{transform:translateX(0);animation-timing-function:steps({n},end)}}"
+            f"{t_end:.2f}%{{transform:translateX({w:.2f}px);animation-timing-function:linear}}"
+            f"{hold:.2f}%{{transform:translateX({w:.2f}px);animation-timing-function:steps({n},end)}}"
+            f"{e_end:.2f}%{{transform:translateX(0)}}100%{{transform:translateX(0)}}}}"
+        )
+        vis = (
+            f"@keyframes v{k}{{0%{{opacity:0}}{a:.2f}%{{opacity:0}}{a+0.01:.2f}%{{opacity:1}}"
+            f"{e_end+1.5:.2f}%{{opacity:1}}{e_end+1.51:.2f}%{{opacity:0}}100%{{opacity:0}}}}"
+        )
+        css.append(kf + vis)
         css.append(
-            f"@keyframes {name}c{{from{{transform:translateX({-(t0-cf)/dur*0:.0f}px)}}"
-            f"to{{transform:translateX({w:.2f}px)}}}}"
-            f"@keyframes {name}v{{from{{opacity:1}}to{{opacity:1}}}}"
-            f".{name}c{{opacity:0;animation:{name}c {dur:.2f}s steps({n}) {t0:.2f}s both,"
-            f"{name}v {t0+dur-cf:.2f}s linear {cf:.2f}s}}"
+            "@media (prefers-reduced-motion:no-preference){"
+            f".tl{k}{{animation:v{k} {cycle}s infinite}}"
+            f".cov{k}{{opacity:1;animation:c{k} {cycle}s infinite,v{k} {cycle}s infinite}}"
+            f".cur{k}{{animation:c{k} {cycle}s infinite,v{k} {cycle}s infinite}}}}"
         )
-        hero.extra.append(
-            f'<rect class="{name}c" x="{x0:.2f}" y="{y0+BASE+2}" width="{CW:.2f}" height="3" fill="{C["fg"]}"/>'
+        s.raw(
+            f'<g clip-path="url(#typearea)"><rect class="cov cov{k}" x="{tx:.1f}" y="{sy+6}" '
+            f'width="{w:.2f}" height="{sh-12}" fill="#081227"/></g>'
         )
+    s.raw('<g style="animation:blink 1.05s infinite">')
+    for k in range(len(lines)):
+        s.raw(
+            f'<rect class="cur cur{k}" x="{tx:.1f}" y="{sy+12}" width="{cw*0.62:.1f}" height="20" '
+            f'rx="1.5" fill="{CYAN}"/>'
+        )
+    s.raw("</g>")
+
+    s.icon("pin", X - 3, 252, 20, MIST, 1.8)
+    s.text(X + 22, 268, "New Delhi, India  ·  ~6 years in MSP and enterprise IT", "plex", 400, 16, MIST)
+
+    # --- fleet status panel ---
+    px, py, pw, ph = 592, 36, 364, 228
+    s.raw(f'<rect x="{px}" y="{py}" width="{pw}" height="{ph}" rx="14" fill="{PANEL}" '
+          f'fill-opacity="0.92" stroke="{LINE}"/>')
+    s.text(px + 20, py + 32, "Fleet status", "plex", 600, 15, ICE)
+    lx = px + pw - 20
+    s.text(lx, py + 32, "live", "plex", 500, 13, GREEN, anchor="end")
+    dot_x = lx - measure("live", "plex", 500, 13) - 10
+    s.raw(f'<circle cx="{dot_x:.1f}" cy="{py+27.5}" r="4" fill="{GREEN}"/>')
+    s.raw(f'<circle cx="{dot_x:.1f}" cy="{py+27.5}" r="4" fill="none" stroke="{GREEN}" '
+          f'style="animation:ring 2s ease-out infinite"/>')
+    s.raw(f'<line x1="{px+16}" y1="{py+48}" x2="{px+pw-16}" y2="{py+48}" stroke="{LINE}"/>')
+    rows = [
+        ("AD / Entra ID", "Hybrid identity", None),
+        ("Microsoft 365", "200+ tenants", None),
+        ("FastPatch", "600+ endpoints · 99%", 11),
+        ("Backup & DR", "Veeam · Spanning · Acronis", None),
+    ]
+    TICKS, TW, TG = 14, 5, 3
+    bx = px + pw - 20 - (TICKS * (TW + TG) - TG)
+    for i, (lab, val, warn) in enumerate(rows):
+        ry = py + 76 + i * 40
+        s.raw(f'<circle cx="{px+24}" cy="{ry-5}" r="4" fill="{GREEN}" '
+              f'style="animation:pulse 2.4s ease-in-out {i*0.6:.1f}s infinite"/>')
+        s.text(px + 38, ry, lab, "plex", 500, 15.5, ICE)
+        s.text(px + 38, ry + 19, val, "plex", 400, 13.5, MIST)
+        for t in range(TICKS):
+            col = AMBER if warn == t else GREEN
+            op = 1 if warn == t else 0.85
+            s.raw(f'<rect x="{bx + t*(TW+TG)}" y="{ry-12}" width="{TW}" height="22" rx="1.5" '
+                  f'fill="{col}" fill-opacity="{op}"/>')
+    s.save("banner.svg")
 
 
-typing("ty1", L["c1"], n1, T1, D1, cursor_from=0.0)
-typing("ty2", L["c2"], n2, T2, D2, cursor_from=T_p2)
-typing("bar", L["bar"], BAR_N, T_bar, D_bar, fill="pbg", col0=5, cursor=False, gcls="pg")
-
-# final blinking underline cursor
-css.append(
-    f".endc{{animation:show .01s {T_end:.2f}s both,blink 1.1s steps(1) {T_end:.2f}s infinite}}"
-)
-hero.extra.append(
-    f'<rect class="endc" x="{hero.x(plen):.2f}" y="{hero.y(L["end"])+BASE+2}" '
-    f'width="{CW:.2f}" height="3" fill="{C["fg"]}"/>'
-)
-
-hero.render(
-    OUT / "hero.svg",
-    "PowerShell console. Get-ADUser rehan.khan returns: Name Rehan Khan; Title Advanced System "
-    "Administrator; Company IT By Design; Office New Delhi, India; about 6 years in MSP and "
-    "enterprise IT, owning L2/L3 escalations and mentoring engineers; focus areas Windows Server, "
-    "AD and Entra ID, Microsoft 365, virtualization, backup and DR, automation. Then "
-    "Invoke-FastPatch runs: 600+ endpoints patched at 99% success, macOS support next.",
-)
-
-# =========================================================================
-# 2. TOOLS — Format-Table
-# =========================================================================
-tools = Pane()
-tools.add(
-    PROMPT, ("Get-Module", "cmd"), (" -ListAvailable ", "par"), ("| ", "par"), ("?", "cmd"),
-    (" Author ", "fg"), ("-eq", "par"), (" 'Rehan Khan' ", "str"), ("| ", "par"),
-    ("ft", "cmd"), (" Name", "fg"), (",", "par"), ("Platform", "fg"), (",", "par"),
-    ("Purpose", "fg"),
-)
-tools.blank()
-rows = [
-    ("FastPatch", "Kaseya VSA, production", "Patch classification + remediation, 600+ machines, 99%"),
-    ("SpanningAuditor", "Spanning API, 200+ M365 orgs", "Read-only backup coverage audit across the fleet"),
-    ("EWSHardcore", "Exchange Online, fleet-wide", "EWS audit + remediation for the EWS retirement"),
-    ("SBHIT", "SharePoint, Graph delta API", "Backup health on 3M+ items / 2.1 TB, DuckDB analysis"),
-    ("FSLogixToolkit", "RDS / FSLogix hosts", "Read-only profile health checks and forensics"),
-    ("DeviceDiag", "Windows endpoints", "Leftover MDM, Autopilot and RMM, hardware, licensing"),
+# =============================================================================
+# 2. PROJECT CARDS
+# =============================================================================
+CARDS = [
+    dict(file="card-technical-analysis-agent.svg", name="technical-analysis-agent", pill="Public",
+         pillc=GREEN, icon="candles", g=("#38C8F0", "#2F6BFF"),
+         desc="Technical-analysis specialist for a multi-agent investment platform: ~24 "
+              "indicators, market-structure engines and risk-managed entries.",
+         langs=[("Python", "#3572A5")], stat="240 tests passing", link=True),
+    dict(file="card-ecom-autopilot.svg", name="ecom-autopilot", pill="Private",
+         pillc=MIST, icon="cube", g=("#F5C451", "#F07B3F"),
+         desc="Decision engine and operating layer for selling on Indian marketplaces, from "
+              "landed-cost economics and compliance to listings, orders and measured profit.",
+         langs=[("Python", "#3572A5"), ("React", "#61DAFB")], stat="1,029 tests passing"),
+    dict(file="card-fastpatch.svg", name="FastPatch", pill="Internal · in production",
+         pillc=CYAN, icon="bolt", g=("#3FD07A", "#119E8E"),
+         desc="Patch classification and remediation tool deployed through Kaseya VSA across "
+              "client fleets. macOS support is next.",
+         langs=[("PowerShell", "#5391FE")], stat="600+ machines · 99% success"),
+    dict(file="card-meridian.svg", name="meridian", pill="Private · in development",
+         pillc=MIST, icon="compass", g=("#A78BFA", "#4F6BFF"),
+         desc="Decision-first paper-trading terminal for Indian equities (NSE), built on a "
+              "multi-agent investment platform.",
+         langs=[("TypeScript", "#3178C6"), ("Python", "#3572A5")], stat="FastAPI · React · Vite",
+         stat_plain=True),
 ]
-w1 = max(len(r[0]) for r in rows) + 2
-w2 = max(len(r[1]) for r in rows) + 2
-tools.add(("Name".ljust(w1), "acc", True), ("Platform".ljust(w2), "acc", True), ("Purpose", "acc", True))
-tools.add(("----".ljust(w1), "acc", True), ("--------".ljust(w2), "acc", True), ("-------", "acc", True))
-for a, b, c in rows:
-    tools.add((a.ljust(w1), "cmd"), (b.ljust(w2), "fg"), (c, "fg"))
-tools.blank()
-tools.add(("# Internal NOC tooling, built in PowerShell 7 and Python. Source isn't public.", "com"))
-tools.render(
-    OUT / "tools.svg",
-    "Internal tools: FastPatch, Kaseya VSA patch classification and remediation, 600+ machines at "
-    "99%; SpanningAuditor, read-only Spanning backup coverage audit across 200+ Microsoft 365 "
-    "tenants; EWSHardcore, Exchange Online EWS audit and remediation; SBHIT, SharePoint backup "
-    "health via Graph delta API on 3M+ items; FSLogix health and forensics toolkit; DeviceDiag, "
-    "endpoint audit for leftover MDM, Autopilot and RMM.",
-)
 
-# =========================================================================
-# 3. PROJECT — technical-analysis-agent (public, linked)
-# =========================================================================
-ta = Pane()
-ta.add(("# technical-analysis-agent", "com", True), ("  (public)", "com"))
-for s in [
-    "# One specialist agent in a multi-agent investment platform. ~24 indicators in pure",
-    "# pandas/numpy, market-structure and volume-profile engines, a weighted confluence",
-    "# score, and entry / stop / targets with a readable reasoning chain. Never a bare",
-    "# BUY or SELL.  Python, FastAPI, Pydantic, Ollama, Finnhub",
-]:
-    ta.add((s, "com"))
-ta.add(PROMPT, ("cd", "cmd"), (" .\\technical-analysis-agent\\", "fg"), ("; ", "par"),
-       ("pytest", "cmd"), (" -q", "par"))
-DOTS = 80
-for k, pct in enumerate([" 33%", " 66%", "100%"]):
-    ta.add(("." * DOTS, "ok"), ("  [" + pct + "]", "fg"))
-ta.add(("240 passed", "ok", True), (" in 2.45s", "ok"))
-ta.render(
-    OUT / "project-technical-analysis-agent.svg",
-    "technical-analysis-agent: a specialist technical-analysis agent for a multi-agent investment "
-    "platform with about 24 indicators, market-structure and volume-profile engines, confluence "
-    "scoring and risk-managed entries. pytest: 240 passed.",
-)
 
-# =========================================================================
-# 4. PROJECTS — private builds
-# =========================================================================
-pv = Pane()
-pv.add(("# ecom-autopilot", "com", True), ("  (private)", "com"))
-for s in [
-    "# Decision engine and operating layer for selling on Indian marketplaces. Part 1",
-    "# decides whether a product is worth selling: landed cost, three-scenario economics,",
-    "# compliance, then a human approval gate. Part 2 runs listings, inventory, orders,",
-    "# returns and settlement, and feeds measured profit back into the next decision.",
-    "# AI research is never allowed to invent a price or a cost.",
-    "# Python, FastAPI, React, Vite, event-sourced audit ledger",
-]:
-    pv.add((s, "com"))
-pv.add(PROMPT, ("cd", "cmd"), (" .\\ecom-autopilot\\", "fg"), ("; ", "par"), ("pytest", "cmd"),
-       (" -q ", "par"), ("| ", "par"), ("Select-Object", "cmd"), (" -Last", "par"), (" 2", "fg"))
-pv.add(("." * (1029 % DOTS), "ok"), (" " * (DOTS - 1029 % DOTS) + "  [100%]", "fg"))
-pv.add(("1029 passed", "ok", True), (" in 39.28s", "ok"))
-pv.blank()
-pv.add(("# meridian", "com", True), ("  (private, in development)", "com"))
-pv.add(("# Decision-first paper-trading terminal for Indian equities (NSE), built on a", "com"))
-pv.add(("# multi-agent investment platform.  FastAPI, React, Vite, TypeScript", "com"))
-pv.render(
-    OUT / "projects-private.svg",
-    "Private builds. ecom-autopilot: decision engine and operating layer for Indian marketplace "
-    "selling, from landed-cost economics and compliance to listings, orders and settlement; "
-    "pytest: 1029 passed. meridian: decision-first paper-trading terminal for Indian equities, in "
-    "development.",
-)
+def card(c):
+    W, H = 480, 252
+    s = Svg(W, H, f"{c['name']}: {c['desc']} {c['stat']}.")
+    card_bg(s, 0, 0, W, H)
+    gid = "eg"
+    s.defs.append(f'<linearGradient id="{gid}" x1="0" y1="0" x2="1" y2="1">'
+                  f'<stop offset="0" stop-color="{c["g"][0]}"/><stop offset="1" stop-color="{c["g"][1]}"/>'
+                  f"</linearGradient>")
+    s.raw(f'<rect x="28" y="28" width="60" height="60" rx="15" fill="url(#{gid})"/>')
+    s.icon(c["icon"], 40, 40, 36, "#FFFFFF", 1.7)
+    s.text(106, 54, c["name"], "plex", 600, 24, ICE)
+    pw = measure(c["pill"], "plex", 500, 12.5) + 22
+    s.raw(f'<rect x="106.5" y="66.5" width="{pw:.1f}" height="23" rx="11.5" fill="none" '
+          f'stroke="{c["pillc"]}" stroke-opacity="0.7"/>')
+    s.text(106 + 11, 82.5, c["pill"], "plex", 500, 12.5, c["pillc"])
+    if c.get("link"):
+        vx = 106 + pw + 8
+        vw = measure("View on GitHub", "plex", 500, 12.5) + 22
+        s.raw(f'<rect x="{vx+0.5:.1f}" y="66.5" width="{vw:.1f}" height="23" rx="11.5" '
+              f'fill="{CYAN}" fill-opacity="0.14" stroke="{CYAN}" stroke-opacity="0.7"/>')
+        s.text(vx + 11, 82.5, "View on GitHub", "plex", 500, 12.5, CYAN)
+    dl = wrap(c["desc"], W - 56, "plex", 400, 16)
+    assert len(dl) <= 3, (c["name"], dl)
+    for i, ln in enumerate(dl):
+        s.text(28, 128 + i * 24, ln, "plex", 400, 16, "#B9C8DF")
+    s.raw(f'<line x1="28" y1="{H-58}" x2="{W-28}" y2="{H-58}" stroke="{LINE}"/>')
+    fy = H - 26
+    x = 28
+    for lang, col in c["langs"]:
+        s.raw(f'<circle cx="{x+6}" cy="{fy-5}" r="6" fill="{col}"/>')
+        s.text(x + 18, fy, lang, "plex", 500, 14, SOFT)
+        x += 18 + measure(lang, "plex", 500, 14) + 18
+    stat_w = measure(c["stat"], "plex", 500, 14)
+    if c.get("stat_plain"):
+        s.text(W - 28, fy, c["stat"], "plex", 500, 14, MIST, anchor="end")
+    else:
+        s.text(W - 28, fy, c["stat"], "plex", 500, 14, GREEN, anchor="end")
+        s.icon("check", W - 28 - stat_w - 22, fy - 15, 18, GREEN, 2.4)
+    s.save(c["file"])
 
-# =========================================================================
-# 5. STACK — hashtable output
-# =========================================================================
-st = Pane()
-st.add(PROMPT, ("$Stack", "var"))
-st.blank()
-stack = [
-    ("Identity", "Active Directory, Entra ID, Group Policy, ADCS/PKI, Kerberos/NTLM, DNS/DHCP"),
-    ("Microsoft365", "Exchange Online, SharePoint, Microsoft Graph API"),
-    ("Endpoints", "Intune, Jamf Pro"),
-    ("Virtualization", "VMware, Hyper-V failover clusters, RDS, FSLogix"),
-    ("BackupDR", "Veeam, Spanning, Acronis, Unitrends, ShadowProtect SPX, Datto, AWS Backup"),
-    ("MSPTooling", "Kaseya VSA, ConnectWise Automate, ScreenConnect, IT Glue"),
-    ("Network", "FortiGate, SonicWall"),
-    ("Code", "PowerShell 7, Python, FastAPI, Pydantic, pandas, React, TypeScript, pytest"),
+
+# =============================================================================
+# 3. INFRASTRUCTURE STACK GRID
+# =============================================================================
+STACK = [
+    ("Identity & access", "shield", ["Active Directory", "Entra ID", "Group Policy", "ADCS / PKI",
+                                      "Kerberos / NTLM", "DNS / DHCP"]),
+    ("Backup & DR", "database", ["Veeam", "Spanning", "Acronis", "Unitrends", "ShadowProtect SPX",
+                                 "Datto", "AWS Backup"]),
+    ("Microsoft 365", "cloud", ["Exchange Online", "SharePoint", "Intune", "Graph API"]),
+    ("MSP & endpoints", "wrench", ["Kaseya VSA", "ConnectWise Automate", "ScreenConnect", "IT Glue",
+                                   "Jamf Pro"]),
+    ("Virtualization", "server", ["VMware", "Hyper-V clusters", "RDS", "FSLogix"]),
+    ("Network & security", "network", ["FortiGate", "SonicWall"]),
 ]
-nw = max(len(k) for k, _ in stack) + 2
-st.add(("Name".ljust(nw), "acc", True), ("Value", "acc", True))
-st.add(("----".ljust(nw), "acc", True), ("-----", "acc", True))
-for k, v in stack:
-    st.add((k.ljust(nw), "fg"), ("{", "par"), (v, "fg"), ("}", "par"))
-st.render(
-    OUT / "stack.svg",
-    "Tech stack. Identity: Active Directory, Entra ID, Group Policy, ADCS/PKI, Kerberos/NTLM, "
-    "DNS/DHCP. Microsoft 365: Exchange Online, SharePoint, Graph API. Endpoints: Intune, Jamf Pro. "
-    "Virtualization: VMware, Hyper-V clusters, RDS, FSLogix. Backup and DR: Veeam, Spanning, "
-    "Acronis, Unitrends, ShadowProtect SPX, Datto, AWS Backup. MSP tooling: Kaseya VSA, "
-    "ConnectWise Automate, ScreenConnect, IT Glue. Network: FortiGate, SonicWall. Code: "
-    "PowerShell 7, Python, FastAPI, Pydantic, pandas, React, TypeScript, pytest.",
-)
 
-# =========================================================================
-# 6. CERTS — Cert:\ drive
-# =========================================================================
-ce = Pane()
-ce.add(PROMPT, ("Get-ChildItem", "cmd"), (" Cert:\\CurrentUser\\My", "fg"))
-ce.blank()
-ce.add(("   PSParentPath: ", "fg"), ("Microsoft.PowerShell.Security\\Certificate::CurrentUser\\My", "fg"))
-ce.blank()
-certs = [
-    "CN=AZ-800 Windows Server Hybrid Core, O=Microsoft",
-    "CN=AZ-801 Windows Server Hybrid Advanced, O=Microsoft",
-    "CN=MD-102 Endpoint Administrator, O=Microsoft",
-    "CN=VMCE Veeam Certified Engineer, O=Veeam",
-    "CN=Automate Certified Professional, O=ConnectWise",
-    "CN=Jamf Certified Associate, O=Jamf",
+
+def stack():
+    W, GAP, CWID = 1000, 20, 490
+    CH, CPAD, CFS = 32, 14, 15
+    inner = CWID - 48
+
+    def layout(chips):
+        rows, cur, cw = [], [], 0
+        for ch in chips:
+            w = measure(ch, "plex", 500, CFS) + 2 * CPAD
+            if cur and cw + 10 + w > inner:
+                rows.append(cur)
+                cur, cw = [], 0
+            cur.append((ch, w))
+            cw += (10 if cw else 0) + w
+        rows.append(cur)
+        return rows
+
+    lays = [layout(c) for _, _, c in STACK]
+    heights = []
+    for r in range(0, len(STACK), 2):
+        n = max(len(lays[r]), len(lays[r + 1]))
+        heights.append(84 + n * (CH + 10) + 12)
+    H = sum(heights) + GAP * (len(heights) - 1)
+    s = Svg(W, H, "Infrastructure stack. " + " ".join(
+        f"{t}: {', '.join(c)}." for t, _, c in STACK))
+    y = 0
+    for r, h in enumerate(heights):
+        for col in range(2):
+            i = r * 2 + col
+            title, icon, _ = STACK[i]
+            x = col * (CWID + GAP)
+            card_bg(s, x, y, CWID, h, 14)
+            s.raw(f'<rect x="{x+24}" y="{y+22}" width="40" height="40" rx="10" fill="{CHIP}" stroke="{CHIPLINE}"/>')
+            s.icon(icon, x + 32, y + 30, 24, CYAN, 1.8)
+            s.text(x + 80, y + 48, title, "plex", 600, 19, ICE)
+            cy = y + 80
+            for row in lays[i]:
+                cx = x + 24
+                for ch, w in row:
+                    s.raw(f'<rect x="{cx+0.5:.1f}" y="{cy+0.5}" width="{w-1:.1f}" height="{CH-1}" '
+                          f'rx="{CH/2}" fill="{CHIP}" stroke="{CHIPLINE}"/>')
+                    s.text(cx + CPAD, cy + 21, ch, "plex", 500, CFS, SOFT)
+                    cx += w + 10
+                cy += CH + 10
+        y += h + GAP
+    s.save("stack.svg")
+
+
+# =============================================================================
+# 4. CERTIFICATIONS
+# =============================================================================
+CERTS = [
+    ("AZ-800", "Windows Server Hybrid Core Infrastructure", "Microsoft"),
+    ("AZ-801", "Windows Server Hybrid Advanced Services", "Microsoft"),
+    ("MD-102", "Endpoint Administrator", "Microsoft"),
+    ("VMCE", "Veeam Certified Engineer", "Veeam"),
+    ("CWA", "Automate Certified Professional", "ConnectWise"),
+    ("JCA", "Jamf Certified Associate", "Jamf"),
 ]
-ce.add(("Thumbprint".ljust(42), "acc", True), ("Subject", "acc", True))
-ce.add(("----------".ljust(42), "acc", True), ("-------", "acc", True))
-for s in certs:
-    ce.add((thumb(s).ljust(42), "par"), (s, "fg"))
-ce.render(
-    OUT / "certs.svg",
-    "Certifications: AZ-800 and AZ-801 Windows Server Hybrid, MD-102 Endpoint Administrator, "
-    "VMCE Veeam Certified Engineer, ConnectWise Automate Certified Professional, Jamf Certified "
-    "Associate.",
-)
 
+
+def certs():
+    W, COLS, GAP, BH = 1000, 3, 20, 104
+    BW = (W - GAP * (COLS - 1)) / COLS
+    rows = (len(CERTS) + COLS - 1) // COLS
+    H = rows * BH + (rows - 1) * GAP
+    s = Svg(W, H, "Certifications: " + "; ".join(f"{c} {n} ({o})" for c, n, o in CERTS) + ".")
+    s.defs.append(f'<linearGradient id="hx" x1="0" y1="0" x2="1" y2="1">'
+                  f'<stop offset="0" stop-color="{CYAN}"/><stop offset="1" stop-color="{GREEN}"/></linearGradient>')
+    for i, (code, name, org) in enumerate(CERTS):
+        x = (i % COLS) * (BW + GAP)
+        y = (i // COLS) * (BH + GAP)
+        card_bg(s, x, y, BW, BH, 14)
+        cx, cy, r = x + 58, y + BH / 2, 38
+        pts = " ".join(
+            f"{cx + r*__import__('math').cos(__import__('math').radians(a)):.1f},"
+            f"{cy + r*__import__('math').sin(__import__('math').radians(a)):.1f}"
+            for a in range(-90, 270, 60)
+        )
+        s.raw(f'<polygon points="{pts}" fill="{CHIP}" stroke="url(#hx)" stroke-width="2.5"/>')
+        fs = 14 if len(code) > 4 else 17
+        s.text(cx, cy + fs * 0.36, code, "mono", 700, fs, ICE, anchor="middle")
+        tx = x + 112
+        lines = wrap(name, BW - 112 - 18, "plex", 600, 15.5)
+        base = cy - (len(lines) * 20 + 18) / 2 + 15
+        for k, ln in enumerate(lines):
+            s.text(tx, base + k * 20, ln, "plex", 600, 15.5, ICE)
+        s.text(tx, base + len(lines) * 20 + 4, org, "plex", 400, 13.5, MIST)
+    s.save("certs.svg")
+
+
+banner()
+for c in CARDS:
+    card(c)
+stack()
+certs()
 for p in sorted(OUT.glob("*.svg")):
-    print(f"{p.name:44s} {p.stat().st_size/1024:6.1f} KB")
-print(f"timeline: end prompt at {T_end:.2f}s")
+    print(f"{p.name:40s} {p.stat().st_size/1024:6.1f} KB")

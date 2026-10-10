@@ -1,40 +1,45 @@
-<img src="assets/hero.svg" width="100%" alt="Rehan Khan, Advanced System Administrator at IT By Design, New Delhi. About 6 years in MSP and enterprise IT, owning L2/L3 escalations across Windows Server, AD / Entra ID, Microsoft 365, virtualization and backup/DR. FastPatch: 600+ endpoints patched at 99% success.">
+<img src="assets/banner.svg" width="100%" alt="Rehan Khan — Advanced System Administrator at IT By Design, New Delhi, India">
 
-<img src="assets/tools.svg" width="100%" alt="Internal tools I've built: FastPatch, SpanningAuditor, EWSHardcore, SBHIT, FSLogix toolkit and DeviceDiag.">
+## 🧭 About me
 
-<a href="https://github.com/rehan-123/technical-analysis-agent"><img src="assets/project-technical-analysis-agent.svg" width="100%" alt="technical-analysis-agent: multi-indicator technical analysis agent for a multi-agent investment platform. 240 tests passing."></a>
+- 🛡️ I own **L2/L3 escalations** for US-based clients at an MSP: Windows Server, Active Directory, Entra ID, Microsoft 365, virtualization and backup/DR
+- 🧠 I came up through **Microsoft Premier support** for enterprise Directory Services: AD, Kerberos, NTLM, ADCS/PKI and Group Policy
+- ⚡ I turn repetitive NOC work into tooling with **PowerShell, Microsoft Graph and Python**, and lately LLM-assisted agents
+- 🤝 I mentor new system administrators and support technicians on my team
 
-<img src="assets/projects-private.svg" width="100%" alt="Private builds: ecom-autopilot (1029 tests passing) and meridian, a paper-trading terminal for Indian equities.">
-
-<img src="assets/stack.svg" width="100%" alt="Tech stack across identity, Microsoft 365, endpoints, virtualization, backup and DR, MSP tooling, networking and code.">
-
-<img src="assets/certs.svg" width="100%" alt="Certifications: AZ-800, AZ-801, MD-102, VMCE, ConnectWise Automate Certified Professional, Jamf Certified Associate.">
+## 🧰 Tech stack
 
 <p align="center">
-  <a href="mailto:rehank9540@gmail.com">rehank9540@gmail.com</a>
+  <img src="https://skillicons.dev/icons?i=windows,powershell,azure,aws,linux,py,fastapi,react,ts,vite,docker,git,github,vscode&perline=14" alt="Windows, PowerShell, Azure, AWS, Linux, Python, FastAPI, React, TypeScript, Vite, Docker, Git, GitHub, VS Code">
 </p>
 
-<details>
-<summary>Plain-text version</summary>
+<img src="assets/stack.svg" width="100%" alt="Infrastructure stack: identity and access, Microsoft 365, virtualization, backup and DR, MSP and endpoint tooling, network and security">
 
-### Rehan Khan
-Advanced System Administrator at IT By Design · New Delhi, India
+## 🚀 Projects
 
-~6 years in MSP and enterprise IT. I own L2/L3 escalations for US-based clients across Windows Server, Active Directory, Entra ID, Microsoft 365, virtualization and backup/DR, and mentor the engineers coming up behind me. Before that: Microsoft Premier support for enterprise Directory Services (AD, Kerberos, NTLM, ADCS/PKI, Group Policy).
+<p>
+  <a href="https://github.com/rehan-123/technical-analysis-agent"><img src="assets/card-technical-analysis-agent.svg" width="49%" alt="technical-analysis-agent — public repo, Python, 240 tests passing"></a>
+  <img src="assets/card-ecom-autopilot.svg" width="49%" alt="ecom-autopilot — private, Python and React, 1,029 tests passing">
+  <img src="assets/card-fastpatch.svg" width="49%" alt="FastPatch — internal, in production, 600+ machines patched at 99% success">
+  <img src="assets/card-meridian.svg" width="49%" alt="meridian — private, in development, paper-trading terminal for Indian equities">
+</p>
 
-**Internal tooling**
-- **FastPatch** — patch classification and remediation through Kaseya VSA; 600+ machines patched at 99% success, macOS support next
-- **SpanningAuditor** — read-only Spanning backup coverage audit across 200+ Microsoft 365 tenants
-- **EWSHardcore** — Exchange Online EWS audit and remediation across the tenant fleet
-- **SBHIT** — SharePoint backup health investigation via the Graph delta API (3M+ items / 2.1 TB), DuckDB analysis
-- **FSLogix toolkit** — read-only profile health checks and forensics for RDS session hosts
-- **DeviceDiag** — endpoint audit for leftover MDM, Autopilot and RMM, hardware health and licensing
+## ⚙️ Built for the NOC
 
-**Projects**
-- [technical-analysis-agent](https://github.com/rehan-123/technical-analysis-agent) — technical-analysis specialist for a multi-agent investment platform; Python, FastAPI, Pydantic; 240 tests passing
-- **ecom-autopilot** (private) — decision engine and operating layer for Indian marketplace selling; Python, FastAPI, React; 1,029 tests passing
-- **meridian** (private, in development) — decision-first paper-trading terminal for Indian equities; FastAPI, React, TypeScript
+Internal tools I've written for day-to-day operations. The code isn't public.
 
-**Certifications** — AZ-800, AZ-801, MD-102, VMCE, ConnectWise Automate Certified Professional, Jamf Certified Associate
+| | Tool | What it does |
+|:-:|---|---|
+| 🗄️ | **SpanningAuditor** | Read-only Spanning backup coverage audit across **200+ Microsoft 365 tenants** |
+| 📬 | **EWSHardcore** | Exchange Online EWS audit and remediation across the tenant fleet |
+| 📂 | **SBHIT** | SharePoint backup health investigation via the Graph delta API — **3M+ items / 2.1 TB** |
+| 👤 | **FSLogix toolkit** | Read-only profile health checks and forensics for RDS session hosts |
+| 💻 | **DeviceDiag** | Finds leftover MDM, Autopilot and RMM on endpoints, plus hardware and licensing state |
 
-</details>
+## 🏅 Certifications
+
+<img src="assets/certs.svg" width="100%" alt="Certifications: AZ-800, AZ-801, MD-102, VMCE, ConnectWise Automate Certified Professional, Jamf Certified Associate">
+
+## 📫 Get in touch
+
+<a href="mailto:rehank9540@gmail.com"><img src="https://img.shields.io/badge/Email-rehank9540%40gmail.com-38C8F0?style=for-the-badge&logo=gmail&logoColor=white&labelColor=0B1730" alt="Email rehank9540@gmail.com"></a>
