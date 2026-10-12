@@ -296,27 +296,28 @@ def banner():
 # 2. PROJECT CARDS
 # =============================================================================
 CARDS = [
-    dict(file="card-technical-analysis-agent.svg", name="technical-analysis-agent", pill="Public",
+    dict(file="proj-meridian.svg", name="meridian", pill="Public",
+         pillc=GREEN, icon="compass", g=("#A78BFA", "#4F6BFF"),
+         desc="Decision-first paper-trading terminal for Indian equities: specialist agents, "
+              "a chief decision agent, risk engine and approval-gated execution.",
+         langs=[("Python", "#3572A5"), ("TypeScript", "#3178C6")], stat="1,320 tests passing",
+         link=True),
+    dict(file="proj-ecom-autopilot.svg", name="ecom-autopilot", pill="Public",
+         pillc=GREEN, icon="cube", g=("#F5C451", "#F07B3F"),
+         desc="Decision engine and operating layer for selling on Indian marketplaces, from "
+              "landed-cost economics and compliance to listings, orders and measured profit.",
+         langs=[("Python", "#3572A5"), ("React", "#61DAFB")], stat="1,029 tests passing",
+         link=True),
+    dict(file="proj-technical-analysis-agent.svg", name="technical-analysis-agent", pill="Public",
          pillc=GREEN, icon="candles", g=("#38C8F0", "#2F6BFF"),
          desc="Technical-analysis specialist for a multi-agent investment platform: ~24 "
               "indicators, market-structure engines and risk-managed entries.",
          langs=[("Python", "#3572A5")], stat="240 tests passing", link=True),
-    dict(file="card-ecom-autopilot.svg", name="ecom-autopilot", pill="Private",
-         pillc=MIST, icon="cube", g=("#F5C451", "#F07B3F"),
-         desc="Decision engine and operating layer for selling on Indian marketplaces, from "
-              "landed-cost economics and compliance to listings, orders and measured profit.",
-         langs=[("Python", "#3572A5"), ("React", "#61DAFB")], stat="1,029 tests passing"),
-    dict(file="card-fastpatch.svg", name="FastPatch", pill="Internal · in production",
+    dict(file="proj-fastpatch.svg", name="FastPatch", pill="Internal · in production",
          pillc=CYAN, icon="bolt", g=("#3FD07A", "#119E8E"),
          desc="Patch classification and remediation tool deployed through Kaseya VSA across "
               "client fleets. macOS support is next.",
          langs=[("PowerShell", "#5391FE")], stat="600+ machines · 99% success"),
-    dict(file="card-meridian.svg", name="meridian", pill="Private · in development",
-         pillc=MIST, icon="compass", g=("#A78BFA", "#4F6BFF"),
-         desc="Decision-first paper-trading terminal for Indian equities (NSE), built on a "
-              "multi-agent investment platform.",
-         langs=[("TypeScript", "#3178C6"), ("Python", "#3572A5")], stat="FastAPI · React · Vite",
-         stat_plain=True),
 ]
 
 
@@ -468,7 +469,116 @@ def certs():
     s.save("cert-badges.svg")
 
 
+# =============================================================================
+# 5. REPO HEADER BANNERS
+# =============================================================================
+REPOS = [
+    dict(out="repo-meridian.svg", name="meridian", icon="compass", g=("#A78BFA", "#4F6BFF"),
+         tag=["Decision-first paper-trading terminal", "for Indian equities (NSE)"],
+         chips=["FastAPI", "React", "TypeScript", "pandas", "Pydantic"],
+         stat="1,293 backend + 27 frontend tests passing",
+         flow_title="How a trade happens",
+         flow=[["Technical", "News", "Strategy", "Scanner", "Risk"],
+               ["Chief Decision Agent"], ["Your approval"], ["Paper broker + journal"]]),
+    dict(out="repo-ecom-autopilot.svg", name="ecom-autopilot", icon="cube", g=("#F5C451", "#F07B3F"),
+         tag=["Decision engine and operating layer", "for Indian marketplace selling"],
+         chips=["Python", "FastAPI", "React", "Vite", "Event sourcing"],
+         stat="1,029 tests passing · ruff clean",
+         flow_title="From idea to measured profit",
+         flow=[["Landed cost", "3-scenario economics", "Compliance"], ["Human approval"],
+               ["Listings", "Inventory", "Orders"], ["Settlement → profit feedback"]]),
+    dict(out="repo-technical-analysis-agent.svg", name="technical-analysis-agent", icon="candles",
+         g=("#38C8F0", "#2F6BFF"),
+         tag=["Technical-analysis specialist agent", "for stocks and crypto"],
+         chips=["Python", "FastAPI", "Pydantic", "pandas", "Ollama"],
+         stat="240 tests passing · fully offline",
+         flow_title="Analysis pipeline",
+         flow=[["OHLCV data", "Validation"], ["~24 indicators", "Market structure", "Volume"],
+               ["Confluence + confidence"], ["Entry · stop · targets"]]),
+]
+
+
+def repo_banner(r):
+    import math
+    W, H = 1280, 400
+    s = Svg(W, H, f"{r['name']}: {' '.join(r['tag'])}. {r['stat']}.")
+    s.defs.append(
+        '<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A1630"/>'
+        '<stop offset="1" stop-color="#0F2650"/></linearGradient>'
+        f'<radialGradient id="glow" cx="0.12" cy="0.15" r="0.55"><stop offset="0" stop-color="{r["g"][0]}" '
+        f'stop-opacity="0.22"/><stop offset="1" stop-color="{r["g"][0]}" stop-opacity="0"/></radialGradient>'
+        '<pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">'
+        '<path d="M32 0H0V32" fill="none" stroke="#FFFFFF" stroke-opacity="0.05"/></pattern>'
+        f'<clipPath id="frame"><rect width="{W}" height="{H}" rx="20"/></clipPath>'
+        f'<linearGradient id="eg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{r["g"][0]}"/>'
+        f'<stop offset="1" stop-color="{r["g"][1]}"/></linearGradient>'
+    )
+    s.raw('<g clip-path="url(#frame)">')
+    for f in ("bg", "grid", "glow"):
+        s.raw(f'<rect width="{W}" height="{H}" fill="url(#{f})"/>')
+    s.raw("</g>")
+    s.raw(f'<rect x="0.5" y="0.5" width="{W-1}" height="{H-1}" rx="20" fill="none" stroke="{LINE}"/>')
+
+    X = 64
+    s.raw(f'<rect x="{X}" y="60" width="76" height="76" rx="19" fill="url(#eg)"/>')
+    s.icon(r["icon"], X + 15, 75, 46, "#FFFFFF", 1.6)
+    name_fs = 50 if len(r["name"]) < 16 else 40
+    s.text(X + 98, 112, r["name"], "plex", 700, name_fs, ICE)
+    for i, ln in enumerate(r["tag"]):
+        s.text(X, 196 + i * 34, ln, "plex", 400, 26, SOFT)
+    cx = X
+    cy = 268
+    for ch in r["chips"]:
+        w = measure(ch, "plex", 500, 15) + 28
+        s.raw(f'<rect x="{cx+0.5:.1f}" y="{cy+0.5}" width="{w-1:.1f}" height="33" rx="16.5" '
+              f'fill="{CHIP}" stroke="{CHIPLINE}"/>')
+        s.text(cx + 14, cy + 22, ch, "plex", 500, 15, SOFT)
+        cx += w + 10
+    s.icon("check", X - 2, 322, 22, GREEN, 2.4)
+    s.text(X + 28, 340, r["stat"], "plex", 500, 17, GREEN)
+
+    # flow panel
+    px, py, pw, ph = 696, 40, 540, 320
+    s.raw(f'<rect x="{px}" y="{py}" width="{pw}" height="{ph}" rx="16" fill="{PANEL}" '
+          f'fill-opacity="0.92" stroke="{LINE}"/>')
+    s.text(px + 24, py + 38, r["flow_title"], "plex", 600, 18, ICE)
+    rows = r["flow"]
+    top, bottom = py + 58, py + ph - 14
+    step = (bottom - top) / len(rows)
+    CH = 40
+    centers = []
+    for i, row in enumerate(rows):
+        ry = top + i * step + (step - CH) / 2
+        widths = [measure(c, "plex", 500, 16) + 28 for c in row]
+        assert sum(widths) + 8 * (len(row) - 1) <= pw - 32, row
+        total = sum(widths) + 8 * (len(row) - 1)
+        rx = px + (pw - total) / 2
+        last = i == len(rows) - 1
+        for c, w in zip(row, widths):
+            stroke = GREEN if last else (r["g"][0] if len(row) == 1 else CHIPLINE)
+            fill = "#0F2B2A" if last else CHIP
+            s.raw(f'<rect x="{rx+0.5:.1f}" y="{ry+0.5:.1f}" width="{w-1:.1f}" height="{CH-1}" rx="9" '
+                  f'fill="{fill}" stroke="{stroke}" stroke-opacity="{1 if len(row)==1 or last else 0.9}"/>')
+            s.text(rx + 14, ry + 26, c, "plex", 500, 16, ICE if len(row) == 1 or last else SOFT)
+            rx += w + 8
+        centers.append((ry, ry + CH))
+    # connectors with a travelling pulse
+    s.css.append("@keyframes flow{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}")
+    for i in range(len(rows) - 1):
+        y1 = centers[i][1] + 3
+        y2 = centers[i + 1][0] - 3
+        xm = px + pw / 2
+        s.raw(f'<line x1="{xm}" y1="{y1:.1f}" x2="{xm}" y2="{y2:.1f}" stroke="{CYAN}" stroke-width="2" '
+              f'stroke-dasharray="4 8" stroke-linecap="round" style="animation:flow 1.2s linear infinite"/>')
+        s.raw(f'<path d="M{xm-5} {y2-6:.1f}l5 6 5-6" fill="none" stroke="{CYAN}" stroke-width="2" '
+              f'stroke-linecap="round" stroke-linejoin="round"/>')
+    s.css.append("@media (prefers-reduced-motion:reduce){line{animation:none!important}}")
+    s.save(r["out"])
+
+
 banner()
+for r in REPOS:
+    repo_banner(r)
 for c in CARDS:
     card(c)
 stack()

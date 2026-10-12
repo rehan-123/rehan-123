@@ -18,10 +18,10 @@
 ## 🚀 Projects
 
 <p>
-  <a href="https://github.com/rehan-123/technical-analysis-agent"><img src="assets/card-technical-analysis-agent.svg" width="49%" alt="technical-analysis-agent — public repo, Python, 240 tests passing"></a>
-  <img src="assets/card-ecom-autopilot.svg" width="49%" alt="ecom-autopilot — private, Python and React, 1,029 tests passing">
-  <img src="assets/card-fastpatch.svg" width="49%" alt="FastPatch — internal, in production, 600+ machines patched at 99% success">
-  <img src="assets/card-meridian.svg" width="49%" alt="meridian — private, in development, paper-trading terminal for Indian equities">
+  <a href="https://github.com/rehan-123/meridian"><img src="assets/proj-meridian.svg" width="49%" alt="meridian — public repo: decision-first paper-trading terminal for Indian equities, 1,320 tests passing"></a>
+  <a href="https://github.com/rehan-123/ecom-autopilot"><img src="assets/proj-ecom-autopilot.svg" width="49%" alt="ecom-autopilot — public repo: decision engine for Indian marketplace selling, 1,029 tests passing"></a>
+  <a href="https://github.com/rehan-123/technical-analysis-agent"><img src="assets/proj-technical-analysis-agent.svg" width="49%" alt="technical-analysis-agent — public repo: multi-indicator analysis agent, 240 tests passing"></a>
+  <img src="assets/proj-fastpatch.svg" width="49%" alt="FastPatch — internal tool in production: 600+ machines patched at 99% success">
 </p>
 
 ## ⚙️ Built for the NOC
