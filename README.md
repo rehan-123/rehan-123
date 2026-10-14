@@ -1,4 +1,4 @@
-<img src="assets/banner.svg" width="100%" alt="Rehan Khan — Advanced System Administrator at IT By Design, New Delhi, India">
+<img src="assets/banner.svg" width="100%" alt="Rehan Khan — Advanced System Administrator, New Delhi, India">
 
 ## 🧭 About me
 

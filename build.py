@@ -172,7 +172,7 @@ def card_bg(s, x, y, w, h, r=16, gid="cardg"):
 # =============================================================================
 def banner():
     W, H = 1000, 300
-    s = Svg(W, H, "Rehan Khan, Advanced System Administrator at IT By Design, New Delhi, India.")
+    s = Svg(W, H, "Rehan Khan, Advanced System Administrator, New Delhi, India.")
     s.defs.append(
         f'<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0A1630"/>'
         f'<stop offset="1" stop-color="#0F2650"/></linearGradient>'
@@ -194,8 +194,6 @@ def banner():
     s.text(X + measure("PS C:\\> ", "mono", 400, 15), 74, "whoami", "mono", 400, 15, MIST)
     s.text(X - 2, 134, "Rehan Khan", "plex", 700, 56, ICE)
     s.text(X, 172, "Advanced System Administrator", "plex", 500, 22, SOFT)
-    s.text(X + measure("Advanced System Administrator", "plex", 500, 22) + 10, 172,
-           "@ IT By Design", "plex", 400, 22, MIST)
 
     # --- rotating typing strip ---
     sx, sy, sw, sh = X, 196, 500, 44
