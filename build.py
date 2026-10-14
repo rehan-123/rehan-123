@@ -54,6 +54,12 @@ ICONS = {
     "compass": '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
     "pin": '<path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>',
     "check": '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    "search": '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5l5 5"/>',
+    "pulse": '<path d="M2.5 12.5h4.5l2.2-5.5 4.6 11 2.4-5.5h5.3"/>',
+    "tag": '<path d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1l8 8-9 9z"/><circle cx="8.2" cy="8.2" r="1.5"/>',
+    "report": '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h5"/>',
+    "pause": '<circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/>',
+    "apple": '<path d="M15.5 3.5c-1.2.1-2.6.9-3.2 2-.5.9-.7 1.9-.6 2.8 1.3.1 2.6-.7 3.3-1.8.5-.9.7-2 .5-3z"/><path d="M12 8.8c-1-.6-2.4-1-3.6-.8C6.2 8.4 4.8 10.5 5 13.4c.2 3.3 2.3 7 4.4 7.1.9 0 1.6-.5 2.6-.5s1.7.5 2.6.5c2.1-.1 4-3.6 4.4-6-1.9-.8-2.9-2.6-2.6-4.6.2-1 .8-1.9 1.6-2.4-1.7-1.5-4.1-1.3-6 .3z"/>',
 }
 
 
@@ -313,11 +319,12 @@ CARDS = [
          desc="Technical-analysis specialist for a multi-agent investment platform: ~24 "
               "indicators, market-structure engines and risk-managed entries.",
          langs=[("Python", "#3572A5")], stat="240 tests passing", link=True),
-    dict(file="proj-fastpatch.svg", name="FastPatch", pill="Internal · in production",
-         pillc=CYAN, icon="bolt", g=("#3FD07A", "#119E8E"),
-         desc="Patch classification and remediation tool deployed through Kaseya VSA across "
-              "client fleets. macOS support is next.",
-         langs=[("PowerShell", "#5391FE")], stat="600+ machines · 99% success"),
+    dict(file="proj-fastpatch.svg", name="FastPatch", pill="Live in production",
+         pillc=GREEN, icon="bolt", g=("#3FD07A", "#119E8E"),
+         desc="Self-healing patch remediation for Kaseya VSA fleets: finds failed Windows "
+              "updates, names the cause, applies the approved fix and proves it landed.",
+         langs=[("PowerShell", "#5391FE")], stat="600+ machines · 99% success",
+         link=True, link_label="Available for MSPs"),
 ]
 
 
@@ -338,10 +345,11 @@ def card(c):
     s.text(106 + 11, 82.5, c["pill"], "plex", 500, 12.5, c["pillc"])
     if c.get("link"):
         vx = 106 + pw + 8
-        vw = measure("View on GitHub", "plex", 500, 12.5) + 22
+        lab = c.get("link_label", "View on GitHub")
+        vw = measure(lab, "plex", 500, 12.5) + 22
         s.raw(f'<rect x="{vx+0.5:.1f}" y="66.5" width="{vw:.1f}" height="23" rx="11.5" '
               f'fill="{CYAN}" fill-opacity="0.14" stroke="{CYAN}" stroke-opacity="0.7"/>')
-        s.text(vx + 11, 82.5, "View on GitHub", "plex", 500, 12.5, CYAN)
+        s.text(vx + 11, 82.5, lab, "plex", 500, 12.5, CYAN)
     dl = wrap(c["desc"], W - 56, "plex", 400, 16)
     assert len(dl) <= 3, (c["name"], dl)
     for i, ln in enumerate(dl):
@@ -576,6 +584,217 @@ def repo_banner(r):
     s.save(r["out"])
 
 
+# =============================================================================
+# 6. FASTPATCH PRODUCT SHOWCASE
+# =============================================================================
+FP_STATS = [("600+", "machines patched"), ("99%", "success rate"), ("5", "checks per machine")]
+FP_LOOP = [
+    ("search", "Detect", "Failed and missing patches from Kaseya"),
+    ("pulse", "Diagnose", "Five timestamped checks on the agent"),
+    ("tag", "Classify", "One cause from a shared vocabulary"),
+    ("wrench", "Remediate", "The approved fix, inside client policy"),
+    ("shield", "Verify", "KB present after the reboot, not just a job"),
+    ("report", "Report", "A ticket-ready line: cause plus action"),
+]
+# Illustrative run: hosts are made up; shows the shape of the output, not real data.
+FP_RUN = [
+    ("WS-0142", "component store", "DISM repair, retry", "ok"),
+    ("SRV-FS01", "servicing stack", "stack update first", "ok"),
+    ("WS-0388", "low disk on C:", "cleanup, retry", "ok"),
+    ("WS-0517", "pending reboot", "held for the window", "hold"),
+]
+FP_GUARDS = [
+    "Never forces a reboot",
+    "Never rewrites update policy",
+    "Fixes only inside client approvals",
+    "Proves the KB landed, not the job",
+    "Same flow on 10 machines or 100+",
+]
+
+
+def fastpatch_hero():
+    W, H = 1000, 690
+    s = Svg(W, H, "FastPatch: patch night, on autopilot. Self-healing Windows patch remediation "
+                  "for Kaseya VSA fleets. 600+ machines patched at 99% success. Detect, diagnose, "
+                  "classify, remediate, verify, report. Never forces a reboot, never rewrites update "
+                  "policy. macOS support is next.")
+    G1, G2 = "#3FD07A", "#16B3A0"
+    s.defs.append(
+        '<linearGradient id="fbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#08142B"/>'
+        '<stop offset="1" stop-color="#0D2347"/></linearGradient>'
+        f'<radialGradient id="fglow" cx="0.12" cy="0.08" r="0.55"><stop offset="0" stop-color="{G1}" '
+        f'stop-opacity="0.20"/><stop offset="1" stop-color="{G1}" stop-opacity="0"/></radialGradient>'
+        f'<radialGradient id="fglow2" cx="0.92" cy="0.95" r="0.5"><stop offset="0" stop-color="{CYAN}" '
+        f'stop-opacity="0.13"/><stop offset="1" stop-color="{CYAN}" stop-opacity="0"/></radialGradient>'
+        '<pattern id="fgrid" width="28" height="28" patternUnits="userSpaceOnUse">'
+        '<path d="M28 0H0V28" fill="none" stroke="#FFFFFF" stroke-opacity="0.045"/></pattern>'
+        f'<clipPath id="fframe"><rect width="{W}" height="{H}" rx="20"/></clipPath>'
+        f'<linearGradient id="flogo" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{G1}"/>'
+        f'<stop offset="1" stop-color="{G2}"/></linearGradient>'
+        f'<linearGradient id="fhl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="{G1}"/>'
+        f'<stop offset="1" stop-color="{CYAN}"/></linearGradient>'
+        f'<linearGradient id="fedge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{G1}" '
+        f'stop-opacity="0.75"/><stop offset="1" stop-color="{LINE}"/></linearGradient>'
+        f'<filter id="fblur" x="-50%" y="-50%" width="200%" height="200%">'
+        f'<feGaussianBlur stdDeviation="6"/></filter>'
+    )
+    s.raw('<g clip-path="url(#fframe)">')
+    for f in ("fbg", "fgrid", "fglow", "fglow2"):
+        s.raw(f'<rect width="{W}" height="{H}" fill="url(#{f})"/>')
+    s.raw("</g>")
+    s.raw(f'<rect x="0.5" y="0.5" width="{W-1}" height="{H-1}" rx="20" fill="none" stroke="{LINE}"/>')
+
+    css = s.css
+    css.append(
+        "@keyframes fpulse{0%,100%{opacity:.45}50%{opacity:1}}"
+        "@keyframes fring{0%{r:4;opacity:.8}100%{r:12;opacity:0}}"
+        "@keyframes fflow{to{stroke-dashoffset:-56}}"
+    )
+
+    # ---- header -------------------------------------------------------------
+    X = 48
+    s.raw(f'<rect x="{X+4}" y="46" width="60" height="60" rx="16" fill="{G1}" opacity="0.45" '
+          f'filter="url(#fblur)"/>')
+    s.raw(f'<rect x="{X}" y="40" width="68" height="68" rx="17" fill="url(#flogo)"/>')
+    s.icon("bolt", X + 13, 53, 42, "#FFFFFF", 1.8)
+    s.text(X + 88, 80, "FastPatch", "plex", 700, 40, ICE)
+
+    px = X + 90
+    pills = [("Live in production", GREEN, True), ("Built for Kaseya VSA", CYAN, False),
+             ("macOS next", AMBER, False)]
+    for lab, col, dot in pills:
+        pw = measure(lab, "plex", 500, 13) + 24 + (14 if dot else 0)
+        s.raw(f'<rect x="{px+0.5:.1f}" y="91.5" width="{pw:.1f}" height="24" rx="12" fill="{col}" '
+              f'fill-opacity="0.10" stroke="{col}" stroke-opacity="0.65"/>')
+        tx = px + 12
+        if dot:
+            s.raw(f'<circle cx="{px+15:.1f}" cy="103.5" r="4" fill="{col}"/>')
+            s.raw(f'<circle class="fring" cx="{px+15:.1f}" cy="103.5" r="4" fill="none" stroke="{col}"/>')
+            tx += 14
+        s.text(tx, 108, lab, "plex", 500, 13, col)
+        px += pw + 8
+
+    s.text(X, 172, "Patch night,", "plex", 700, 38, ICE)
+    s.text(X + measure("Patch night, ", "plex", 700, 38), 172, "on autopilot.", "plex", 700, 38,
+           "url(#fhl)")
+    sub = ("Finds every failed Windows update across the fleet, names the cause, applies the "
+           "approved fix and proves it landed. All on the Kaseya agent you already run.")
+    for i, ln in enumerate(wrap(sub, 540, "plex", 400, 17)):
+        s.text(X, 206 + i * 25, ln, "plex", 400, 17, "#B9C8DF")
+
+    # ---- stat tiles ---------------------------------------------------------
+    TX, TY, TW_, TH, TG_ = 624, 40, 108, 120, 8
+    for i, (big, lab) in enumerate(FP_STATS):
+        x = TX + i * (TW_ + TG_)
+        s.raw(f'<rect x="{x+0.5}" y="{TY+0.5}" width="{TW_-1}" height="{TH-1}" rx="14" '
+              f'fill="{PANEL}" fill-opacity="0.85" stroke="url(#fedge)"/>')
+        s.text(x + 16, TY + 54, big, "plex", 700, 36, G1 if i < 2 else ICE)
+        for j, ln in enumerate(wrap(lab, TW_ - 30, "plex", 500, 13)):
+            s.text(x + 16, TY + 80 + j * 17, ln, "plex", 500, 13, MIST)
+    # roadmap tile
+    ry = TY + TH + 10
+    rw = 3 * TW_ + 2 * TG_
+    s.raw(f'<rect x="{TX+0.5}" y="{ry+0.5}" width="{rw-1}" height="63" rx="14" fill="{AMBER}" '
+          f'fill-opacity="0.07" stroke="{AMBER}" stroke-opacity="0.45"/>')
+    s.icon("apple", TX + 16, ry + 18, 26, AMBER, 1.6)
+    s.text(TX + 54, ry + 28, "Coming next: macOS", "plex", 600, 15.5, ICE)
+    s.text(TX + 54, ry + 48, "Mac endpoints on the same loop", "plex", 400, 13.5, MIST)
+
+    # ---- the loop -----------------------------------------------------------
+    s.text(X, 298, "THE LOOP", "mono", 700, 12.5, G1, extra='letter-spacing="2.5"')
+    s.text(X + 92, 298, "runs on every machine, every patch night", "plex", 400, 13.5, MIST)
+    LX, LY, LW, LH = 32, 312, 936, 168
+    s.raw(f'<rect x="{LX+0.5}" y="{LY+0.5}" width="{LW-1}" height="{LH-1}" rx="16" fill="{PANEL}" '
+          f'fill-opacity="0.78" stroke="{LINE}"/>')
+    n = len(FP_LOOP)
+    slot = (LW - 32) / n
+    cxs = [LX + 16 + slot * (i + 0.5) for i in range(n)]
+    cy = LY + 50
+    R = 25
+    s.raw(f'<line x1="{cxs[0]:.1f}" y1="{cy}" x2="{cxs[-1]:.1f}" y2="{cy}" stroke="{LINE}" '
+          f'stroke-width="2"/>')
+    s.raw(f'<line class="fflow" x1="{cxs[0]:.1f}" y1="{cy}" x2="{cxs[-1]:.1f}" y2="{cy}" stroke="{G1}" '
+          f'stroke-width="2" stroke-dasharray="6 8" stroke-opacity="0.75"/>')
+    cyc = 7.2
+    dist = cxs[-1] - cxs[0]
+    css.append(
+        f"@keyframes ftravel{{0%{{transform:translateX(0);opacity:0}}3%{{opacity:1}}"
+        f"72%{{opacity:1}}75%{{transform:translateX({dist:.1f}px);opacity:0}}"
+        f"100%{{transform:translateX({dist:.1f}px);opacity:0}}}}"
+        "@keyframes flit{0%{opacity:0}4%{opacity:1}16%{opacity:1}30%{opacity:0}100%{opacity:0}}"
+        "@media (prefers-reduced-motion:no-preference){"
+        f".fdot{{animation:ftravel {cyc}s linear infinite}}"
+        ".fflow{animation:fflow 2.4s linear infinite}"
+        ".fring{animation:fring 2s ease-out infinite}"
+        ".flive{animation:fpulse 2.4s ease-in-out infinite}"
+        + "".join(f".flit{i}{{opacity:0;animation:flit {cyc}s linear {cyc*0.15*i:.2f}s infinite}}"
+                  for i in range(n))
+        + "}"
+        "@media (prefers-reduced-motion:reduce){.fdot{display:none}}"
+    )
+    for i, (ic, name, cap) in enumerate(FP_LOOP):
+        x = cxs[i]
+        last = i >= 4
+        col = G1 if last else CYAN
+        s.raw(f'<circle class="flit{i}" cx="{x:.1f}" cy="{cy}" r="{R+8}" fill="{col}" fill-opacity="0.28" '
+              f'filter="url(#fblur)"/>')
+        s.raw(f'<circle cx="{x:.1f}" cy="{cy}" r="{R}" fill="{CHIP}" stroke="{col}" stroke-width="1.6"/>')
+        s.icon(ic, x - 12, cy - 12, 24, col, 1.8)
+        s.text(x, cy + 50, name, "plex", 600, 16, ICE, anchor="middle")
+        for j, ln in enumerate(wrap(cap, slot - 20, "plex", 400, 13)):
+            s.text(x, cy + 71 + j * 17, ln, "plex", 400, 13, MIST, anchor="middle")
+    s.raw(f'<g class="fdot"><circle cx="{cxs[0]:.1f}" cy="{cy}" r="9" fill="{G1}" opacity="0.5" '
+          f'filter="url(#fblur)"/><circle cx="{cxs[0]:.1f}" cy="{cy}" r="4.5" fill="#FFFFFF"/></g>')
+
+    # ---- sample run terminal ------------------------------------------------
+    BY, BH = 500, 172
+    tx0, tw = 32, 560
+    s.raw(f'<rect x="{tx0+0.5}" y="{BY+0.5}" width="{tw-1}" height="{BH-1}" rx="16" fill="#060F22" '
+          f'stroke="{LINE}"/>')
+    s.raw(f'<path d="M{tx0+0.5} {BY+36}H{tx0+tw-0.5}" stroke="{LINE}"/>')
+    for k, c in enumerate(("#F2655B", AMBER, G1)):
+        s.raw(f'<circle cx="{tx0+22+k*16}" cy="{BY+18.5}" r="5" fill="{c}" fill-opacity="0.85"/>')
+    s.text(tx0 + 80, BY + 23, "fastpatch  ·  sample run", "mono", 400, 13, MIST)
+    s.text(tx0 + tw - 18, BY + 23, "illustrative", "plex", 500, 12, "#6F86AB", anchor="end")
+    FS = 13.5
+    cols = [tx0 + 20, tx0 + 112, tx0 + 262, tx0 + 432]
+    hy = BY + 60
+    for cx_, lab in zip(cols, ("HOST", "CAUSE", "ACTION", "RESULT")):
+        s.text(cx_, hy, lab, "mono", 400, 11.5, "#6F86AB", extra='letter-spacing="1.2"')
+    m = len(FP_RUN)
+    kfs = []
+    for k, (host, cause, act, res) in enumerate(FP_RUN):
+        y = hy + 25 + k * 23
+        a = 6 + k * 11
+        kfs.append(f"@keyframes frun{k}{{0%{{opacity:0}}{a}%{{opacity:0}}{a+3}%{{opacity:1}}"
+                   f"88%{{opacity:1}}94%{{opacity:0}}100%{{opacity:0}}}}"
+                   f"@media (prefers-reduced-motion:no-preference){{.frun{k}{{animation:frun{k} 9s infinite}}}}")
+        s.raw(f'<g class="frun{k}">')
+        s.text(cols[0], y, host, "mono", 400, FS, ICE)
+        s.text(cols[1], y, cause, "mono", 400, FS, "#B9C8DF")
+        s.text(cols[2], y, act, "mono", 400, FS, SOFT)
+        if res == "ok":
+            s.icon("check", cols[3] - 1, y - 13, 16, G1, 2.6)
+            s.text(cols[3] + 20, y, "verified", "mono", 400, FS, G1)
+        else:
+            s.icon("pause", cols[3] - 1, y - 13, 16, AMBER, 2)
+            s.text(cols[3] + 20, y, "held", "mono", 400, FS, AMBER)
+        s.raw("</g>")
+    css.extend(kfs)
+
+    # ---- guardrails ---------------------------------------------------------
+    gx, gw = tx0 + tw + 16, W - 32 - (tx0 + tw + 16)
+    s.raw(f'<rect x="{gx+0.5}" y="{BY+0.5}" width="{gw-1}" height="{BH-1}" rx="16" fill="{PANEL}" '
+          f'fill-opacity="0.8" stroke="{LINE}"/>')
+    s.icon("shield", gx + 20, BY + 16, 22, G1, 1.8)
+    s.text(gx + 50, BY + 33, "Guardrails, not hope", "plex", 600, 16.5, ICE)
+    for k, g in enumerate(FP_GUARDS):
+        y = BY + 66 + k * 22.5
+        s.icon("check", gx + 22, y - 13, 16, G1, 2.6)
+        s.text(gx + 46, y, g, "plex", 400, 14.5, "#C8D5EA")
+    s.save("fastpatch-hero.svg")
+
+
 banner()
 for r in REPOS:
     repo_banner(r)
@@ -583,5 +802,6 @@ for c in CARDS:
     card(c)
 stack()
 certs()
+fastpatch_hero()
 for p in sorted(OUT.glob("*.svg")):
     print(f"{p.name:40s} {p.stat().st_size/1024:6.1f} KB")
